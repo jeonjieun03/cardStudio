@@ -1,0 +1,1785 @@
+<title>무드카드 스튜디오</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Gowun+Dodum&display=swap">
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --panel-alt: #eef0f3;
+    --border: #dde1e7;
+    --text: #171a1f;
+    --text-dim: #5b6472;
+    --accent: #c9821a;
+    --accent-strong: #a66614;
+    --accent-soft: #fdecc8;
+    --danger: #dc2626;
+    --danger-soft: #fee2e2;
+    --danger-text: #991b1b;
+    --warn-soft: #fef3c7;
+    --warn-text: #92400e;
+    --ok-soft: #dcfce7;
+    --ok-text: #166534;
+    /* stage is a fixed light-neutral surface in both themes, like a
+       photo-editor canvas well — it does not switch with the theme. */
+    --stage-bg: #e7e9ed;
+    --stage-checker-a: #d9dce1;
+    --stage-checker-b: #f0f1f4;
+    --stage-text: #6b7280;
+    --font-display: 'Sora', 'IBM Plex Sans', sans-serif;
+    --font-body: 'IBM Plex Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1115;
+      --panel: #171a20;
+      --panel-alt: #1e232b;
+      --border: #2a2f38;
+      --text: #e8eaee;
+      --text-dim: #9aa3ad;
+      --accent: #f0b155;
+      --accent-strong: #f6c877;
+      --accent-soft: #3a2a10;
+      --danger: #f87171;
+      --danger-soft: #3f1d1d;
+      --danger-text: #fca5a5;
+      --warn-soft: #3a2f10;
+      --warn-text: #fbbf24;
+      --ok-soft: #10301f;
+      --ok-text: #4ade80;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1115;
+    --panel: #171a20;
+    --panel-alt: #1e232b;
+    --border: #2a2f38;
+    --text: #e8eaee;
+    --text-dim: #9aa3ad;
+    --accent: #f0b155;
+    --accent-strong: #f6c877;
+    --accent-soft: #3a2a10;
+    --danger: #f87171;
+    --danger-soft: #3f1d1d;
+    --danger-text: #fca5a5;
+    --warn-soft: #3a2f10;
+    --warn-text: #fbbf24;
+    --ok-soft: #10301f;
+    --ok-text: #4ade80;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .brand h1 {
+    font-family: var(--font-display); font-weight: 700; font-size: 19px;
+    margin: 0; letter-spacing: -0.01em; white-space: nowrap;
+  }
+  .brand .tag {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px;
+    white-space: nowrap;
+  }
+  .export-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  select.fmt {
+    background: var(--panel-alt); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 8px 10px; cursor: pointer;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    border-radius: 8px; border: 1px solid var(--border);
+    background: var(--panel-alt); color: var(--text);
+    padding: 8px 14px; cursor: pointer; font-weight: 500;
+    transition: filter .12s ease, transform .05s ease;
+  }
+  .btn:hover { filter: brightness(1.05); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #06231f; font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger { background: var(--danger-soft); border-color: var(--danger); color: var(--danger-text); }
+  .btn.ghost { background: transparent; }
+  .btn.small { padding: 5px 10px; font-size: 12.5px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  main.workspace {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    grid-template-areas: "sidebar stage";
+    gap: 0;
+    min-height: 0;
+  }
+  @media (max-width: 860px) {
+    main.workspace {
+      grid-template-columns: 1fr;
+      grid-template-areas: "stage" "sidebar";
+    }
+  }
+
+  .sidebar {
+    grid-area: sidebar;
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+    overflow-y: auto;
+    max-height: none;
+  }
+  @media (max-width: 860px) {
+    .sidebar { border-right: none; border-top: 1px solid var(--border); }
+  }
+
+  .panel { padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  .panel h2 {
+    font-family: var(--font-display); font-size: 12.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim);
+    margin: 0 0 12px;
+  }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 5px;
+  }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row.between { justify-content: space-between; }
+  .grow { flex: 1; min-width: 0; }
+
+  textarea.text-input {
+    width: 100%; min-height: 64px; resize: vertical;
+    background: var(--panel-alt); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 9px 10px;
+  }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  input[type="color"] {
+    width: 40px; height: 32px; padding: 2px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--panel-alt); cursor: pointer;
+  }
+  input[type="text"] {
+    width: 100%; background: var(--panel-alt); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: 8px 10px;
+  }
+  .readout { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-dim); }
+
+  .ratio-group, .align-group { display: flex; gap: 6px; }
+  .ratio-group .btn, .align-group .btn { flex: 1; justify-content: center; }
+  .btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-strong); font-weight: 600; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    font-size: 12px; padding: 5px 10px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--panel-alt); color: var(--text-dim);
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent-strong); }
+
+  .dropzone {
+    border: 1.5px dashed var(--border); border-radius: 10px; padding: 18px 12px;
+    text-align: center; cursor: pointer; background: var(--panel-alt);
+    transition: border-color .12s ease, background .12s ease;
+  }
+  .dropzone:hover, .dropzone.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .dropzone .hint { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .filename { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin-top: 8px; word-break: break-all; }
+
+  .banner {
+    margin-top: 10px; padding: 9px 11px; border-radius: 8px; font-size: 12.5px;
+    display: none; line-height: 1.45;
+  }
+  .banner.show { display: block; }
+  .banner.error { background: var(--danger-soft); color: var(--danger-text); }
+  .banner.ok { background: var(--ok-soft); color: var(--ok-text); }
+  .banner.warn { background: var(--warn-soft); color: var(--warn-text); }
+
+  .tpl-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .tpl-row {
+    border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px;
+    background: var(--panel-alt);
+  }
+  .tpl-row .meta { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .tpl-row .name { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tpl-row .sub { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); margin-top: 2px; }
+  .tpl-row .actions { display: flex; gap: 6px; margin-top: 8px; }
+  .tpl-empty { font-size: 12.5px; color: var(--text-dim); padding: 6px 0; }
+  .badge {
+    font-family: var(--font-mono); font-size: 10px; border: 1px solid var(--border);
+    border-radius: 999px; padding: 1px 7px; color: var(--text-dim); white-space: nowrap;
+  }
+
+  .stage {
+    grid-area: stage;
+    background: var(--stage-bg);
+    display: grid;
+    grid-template-rows: 1fr auto 3fr; /* biases content toward the top quarter, between flush-top and dead-center */
+    justify-items: center;
+    padding: 18px; min-height: 420px;
+  }
+  .stage-content {
+    grid-row: 2;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 14px;
+  }
+  .canvas-wrap {
+    position: relative;
+    max-width: min(78vw, 460px);
+    width: 100%;
+    background-image:
+      linear-gradient(45deg, var(--stage-checker-a) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--stage-checker-a) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--stage-checker-a) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--stage-checker-a) 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    background-color: var(--stage-checker-b);
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 14px 34px rgba(0,0,0,.14);
+    overflow: hidden;
+  }
+  canvas#stageCanvas { display: block; width: 100%; height: auto; cursor: grab; touch-action: none; }
+  canvas#stageCanvas:active { cursor: grabbing; }
+  .stage-readout {
+    font-family: var(--font-mono); font-size: 11.5px; color: var(--stage-text);
+    display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+  }
+  .stage-hint { font-size: 12px; color: var(--stage-text); text-align: center; max-width: 420px; }
+
+  input[type="file"] { display: none; }
+
+  .checkbox-row { display: flex; align-items: center; gap: 7px; }
+  .checkbox-row input { accent-color: var(--accent); }
+  .checkbox-row label { margin: 0; color: var(--text); font-size: 13px; }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1>무드카드 스튜디오</h1>
+      <span class="tag">T03 · 음악·음식·여행 무드카드</span>
+    </div>
+    <div class="export-controls">
+      <select id="fmtSelect" class="fmt" aria-label="파일 형식">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPEG</option>
+      </select>
+      <button class="btn primary" id="downloadBtn">다운로드</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="sidebar">
+
+      <section class="panel">
+        <h2>이미지</h2>
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="사진 업로드">
+          <div>클릭하거나 사진을 끌어다 놓으세요</div>
+          <div class="hint">PNG, JPEG만 지원 · 음악, 음식, 여행 사진 무엇이든</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/png,image/jpeg" />
+        <div class="filename" id="fileName"></div>
+        <div class="banner error" id="imageError"></div>
+      </section>
+
+      <section class="panel">
+        <h2>화면비</h2>
+        <div class="ratio-group" id="ratioGroup">
+          <button class="btn" data-ratio="1:1">1:1</button>
+          <button class="btn" data-ratio="4:5">4:5</button>
+          <button class="btn" data-ratio="9:16">9:16</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>문구</h2>
+        <div class="field">
+          <label>카테고리</label>
+          <div class="ratio-group" id="categoryGroup">
+            <button class="btn small" data-category="music">음악</button>
+            <button class="btn small" data-category="food">음식</button>
+            <button class="btn small" data-category="travel">여행</button>
+          </div>
+        </div>
+        <div class="field" id="musicTitleField" style="display:none;">
+          <label for="musicTitle">곡 제목 (재생바에 표시)</label>
+          <input type="text" id="musicTitle" placeholder="예: Butterfly - 방탄소년단" />
+        </div>
+        <div class="field">
+          <label for="textContent" id="textContentLabel">내용</label>
+          <textarea class="text-input" id="textContent" placeholder="문구를 입력하세요 (줄바꿈 가능)"></textarea>
+          <div class="chip-row" id="chipRow"></div>
+        </div>
+        <div class="row" style="gap:16px;">
+          <div class="field grow" id="musicDurationField" style="display:none;">
+            <label for="musicDuration">곡 길이 (분:초)</label>
+            <input type="text" id="musicDuration" placeholder="3:45" />
+          </div>
+          <div class="field grow" id="musicProgressField" style="display:none;">
+            <label for="musicProgress">재생 위치 — <span id="musicProgressVal" class="readout"></span></label>
+            <input type="range" id="musicProgress" min="0" max="100" step="1" />
+          </div>
+        </div>
+        <div class="field" id="musicBarPosField" style="display:none;">
+          <label for="musicBarPos">재생바 위치 (상단 ↔ 하단) — <span id="musicBarPosVal" class="readout"></span></label>
+          <input type="range" id="musicBarPos" min="0" max="100" step="1" />
+        </div>
+
+        <div class="field" id="foodPlaceField" style="display:none;">
+          <label for="foodPlace">가게 이름</label>
+          <input type="text" id="foodPlace" placeholder="예: 스시 오마카세 강남점" />
+        </div>
+        <div class="row" style="gap:16px;">
+          <div class="field grow" id="foodRegionField" style="display:none;">
+            <label for="foodRegion">지역/동네 (위치 라벨용)</label>
+            <input type="text" id="foodRegion" placeholder="예: 강남" />
+          </div>
+          <div class="field grow" id="foodRatingField" style="display:none;">
+            <label for="foodRating">별점 — <span id="foodRatingVal" class="readout"></span></label>
+            <input type="range" id="foodRating" min="0" max="5" step="0.5" />
+          </div>
+        </div>
+        <div class="field" id="foodBarPosField" style="display:none;">
+          <label for="foodBarPos">별점바 위치 (상단 ↔ 하단) — <span id="foodBarPosVal" class="readout"></span></label>
+          <input type="range" id="foodBarPos" min="0" max="100" step="1" />
+        </div>
+
+        <div class="row" style="gap:16px;">
+          <div class="field grow" id="travelDestField" style="display:none;">
+            <label for="travelDest">여행지</label>
+            <input type="text" id="travelDest" placeholder="예: 파리, 프랑스" />
+          </div>
+          <div class="field grow" id="travelDateField" style="display:none;">
+            <label for="travelDate">날짜 (선택)</label>
+            <input type="text" id="travelDate" placeholder="2024.08.15" />
+          </div>
+        </div>
+        <div class="field" id="travelBarPosField" style="display:none;">
+          <label for="travelBarPos">티켓 위치 (상단 ↔ 하단) — <span id="travelBarPosVal" class="readout"></span></label>
+          <input type="range" id="travelBarPos" min="0" max="100" step="1" />
+        </div>
+        <div class="field">
+          <label for="fontSize">크기 — <span id="fontSizeVal" class="readout"></span></label>
+          <input type="range" id="fontSize" min="18" max="180" step="2" />
+        </div>
+        <div class="row" style="gap:16px;">
+          <div class="field grow">
+            <label for="posX">가로 위치 — <span id="posXVal" class="readout"></span></label>
+            <input type="range" id="posX" min="0" max="100" step="1" />
+          </div>
+          <div class="field grow">
+            <label for="posY">세로 위치 — <span id="posYVal" class="readout"></span></label>
+            <input type="range" id="posY" min="0" max="100" step="1" />
+          </div>
+        </div>
+        <div class="row between" style="margin-bottom:12px;">
+          <div class="align-group" id="alignGroup" style="flex:1;">
+            <button class="btn small" data-align="left">좌</button>
+            <button class="btn small" data-align="center">중</button>
+            <button class="btn small" data-align="right">우</button>
+          </div>
+          <input type="color" id="textColor" title="글자 색상" />
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="outlineToggle" />
+          <label for="outlineToggle">외곽선(가독성 보조)</label>
+        </div>
+        <div class="stage-hint" style="margin-top:8px; color:var(--text-dim); text-align:left; max-width:none;">
+          미리보기 위에서 드래그하면 문구 위치를 바로 옮길 수 있어요.
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>템플릿</h2>
+        <div class="field">
+          <label for="tplName">템플릿 이름</label>
+          <input type="text" id="tplName" placeholder="예: 공지용 1:1" />
+        </div>
+        <div class="row">
+          <button class="btn grow" id="saveNewTplBtn">새 템플릿으로 저장</button>
+          <button class="btn grow" id="updateTplBtn" disabled>현재 템플릿 업데이트</button>
+        </div>
+        <div class="banner" id="tplBanner"></div>
+        <div class="tpl-list" id="tplList"></div>
+      </section>
+
+      <section class="panel">
+        <h2>JSON 가져오기 / 내보내기</h2>
+        <div class="row">
+          <button class="btn grow" id="exportJsonBtn">내보내기</button>
+          <button class="btn grow" id="importJsonBtn">가져오기</button>
+        </div>
+        <input type="file" id="jsonFileInput" accept="application/json,.json" />
+        <div class="banner" id="jsonBanner"></div>
+      </section>
+
+    </aside>
+
+    <div class="stage">
+      <div class="stage-content">
+        <div class="canvas-wrap">
+          <canvas id="stageCanvas"></canvas>
+        </div>
+        <div class="stage-readout">
+          <span id="resReadout"></span>
+          <span id="fontReadout"></span>
+        </div>
+        <div class="banner warn" id="downloadBanner" style="display:none;"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- constants ----------
+  var ASPECTS = {
+    "1:1": { w: 1080, h: 1080 },
+    "4:5": { w: 1080, h: 1350 },
+    "9:16": { w: 1080, h: 1920 }
+  };
+  var TPL_KEY = "snapcard.templates.v1";
+  var CANVAS_FONT_STACK = '"Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  var CATEGORY_LABELS = { music: "음악", food: "음식", travel: "여행" };
+  var CATEGORY_CHIPS = {
+    music: ["이번 주 플레이리스트", "오늘의 최애곡", "무한반복 중"],
+    food: ["오늘의 맛집", "홈쿠킹 기록", "인생 메뉴 발견"],
+    travel: ["오늘의 풍경", "여행 스냅", "다시 가고 싶다"]
+  };
+
+  // ---------- state ----------
+  var state = {
+    aspect: "1:1",
+    category: "travel", // "music" | "food" | "travel"
+    image: null,        // HTMLImageElement
+    imageDataURL: null, // string | null
+    text: {
+      content: "오늘의 기록",
+      x: 0.5, y: 0.84,
+      fontSize: 64,
+      color: "#ffffff",
+      align: "center",
+      outline: true
+    },
+    music: {
+      title: "",   // shown in the mini player bar, music category only
+      progress: 0.35,
+      duration: 225, // seconds (3:45), editable via the mm:ss field
+      barPosition: 1 // 0 = near the top, 1 = near the bottom
+    },
+    food: {
+      place: "",   // restaurant/dish name, shown in the rating bar + location label
+      region: "",  // neighborhood, shown in the location label only
+      rating: 4,   // 0-5, half-star steps
+      barPosition: 1 // 0 = near the top, 1 = near the bottom
+    },
+    travel: {
+      destination: "", // shown on the boarding-pass ticket
+      date: "",        // optional, shown on the ticket stub
+      barPosition: 1   // 0 = near the top, 1 = near the bottom
+    },
+    currentTemplateId: null
+  };
+
+  // ---------- dom ----------
+  var canvas = document.getElementById("stageCanvas");
+  var ctx = canvas.getContext("2d");
+  var fileInput = document.getElementById("fileInput");
+  var dropzone = document.getElementById("dropzone");
+  var fileNameEl = document.getElementById("fileName");
+  var imageErrorEl = document.getElementById("imageError");
+  var ratioGroup = document.getElementById("ratioGroup");
+  var categoryGroup = document.getElementById("categoryGroup");
+  var chipRowEl = document.getElementById("chipRow");
+  var textContentEl = document.getElementById("textContent");
+  var textContentLabelEl = document.getElementById("textContentLabel");
+  var musicTitleField = document.getElementById("musicTitleField");
+  var musicTitleEl = document.getElementById("musicTitle");
+  var musicDurationField = document.getElementById("musicDurationField");
+  var musicDurationEl = document.getElementById("musicDuration");
+  var musicProgressField = document.getElementById("musicProgressField");
+  var musicProgressEl = document.getElementById("musicProgress");
+  var musicProgressValEl = document.getElementById("musicProgressVal");
+  var musicBarPosField = document.getElementById("musicBarPosField");
+  var musicBarPosEl = document.getElementById("musicBarPos");
+  var musicBarPosValEl = document.getElementById("musicBarPosVal");
+  var foodPlaceField = document.getElementById("foodPlaceField");
+  var foodPlaceEl = document.getElementById("foodPlace");
+  var foodRegionField = document.getElementById("foodRegionField");
+  var foodRegionEl = document.getElementById("foodRegion");
+  var foodRatingField = document.getElementById("foodRatingField");
+  var foodRatingEl = document.getElementById("foodRating");
+  var foodRatingValEl = document.getElementById("foodRatingVal");
+  var foodBarPosField = document.getElementById("foodBarPosField");
+  var foodBarPosEl = document.getElementById("foodBarPos");
+  var foodBarPosValEl = document.getElementById("foodBarPosVal");
+  var travelDestField = document.getElementById("travelDestField");
+  var travelDestEl = document.getElementById("travelDest");
+  var travelDateField = document.getElementById("travelDateField");
+  var travelDateEl = document.getElementById("travelDate");
+  var travelBarPosField = document.getElementById("travelBarPosField");
+  var travelBarPosEl = document.getElementById("travelBarPos");
+  var travelBarPosValEl = document.getElementById("travelBarPosVal");
+  var fontSizeEl = document.getElementById("fontSize");
+  var fontSizeValEl = document.getElementById("fontSizeVal");
+  var posXEl = document.getElementById("posX");
+  var posYEl = document.getElementById("posY");
+  var posXValEl = document.getElementById("posXVal");
+  var posYValEl = document.getElementById("posYVal");
+  var alignGroup = document.getElementById("alignGroup");
+  var textColorEl = document.getElementById("textColor");
+  var outlineToggleEl = document.getElementById("outlineToggle");
+  var tplNameEl = document.getElementById("tplName");
+  var saveNewTplBtn = document.getElementById("saveNewTplBtn");
+  var updateTplBtn = document.getElementById("updateTplBtn");
+  var tplBanner = document.getElementById("tplBanner");
+  var tplListEl = document.getElementById("tplList");
+  var exportJsonBtn = document.getElementById("exportJsonBtn");
+  var importJsonBtn = document.getElementById("importJsonBtn");
+  var jsonFileInput = document.getElementById("jsonFileInput");
+  var jsonBanner = document.getElementById("jsonBanner");
+  var fmtSelect = document.getElementById("fmtSelect");
+  var downloadBtn = document.getElementById("downloadBtn");
+  var downloadBanner = document.getElementById("downloadBanner");
+  var resReadout = document.getElementById("resReadout");
+  var fontReadout = document.getElementById("fontReadout");
+
+  // ---------- helpers: banners ----------
+  function flash(el, msg, kind, ms) {
+    el.textContent = msg;
+    el.className = "banner show " + (kind || "");
+    if (ms) {
+      window.clearTimeout(el._t);
+      el._t = window.setTimeout(function () {
+        el.className = "banner " + (kind || "");
+      }, ms);
+    }
+  }
+  function clearBanner(el) {
+    el.textContent = "";
+    el.className = el.className.replace("show", "");
+  }
+
+  // ---------- rendering ----------
+  // The on-screen canvas IS the export source: we never draw a second,
+  // lower-resolution copy for preview. The canvas's pixel buffer is always
+  // set to the full export resolution (1080-wide); CSS only scales its
+  // *display* size for the screen. That guarantees the downloaded file is
+  // pixel-identical to whatever is on screen at the moment of export —
+  // there is no separate render path that could drift out of sync.
+
+  // Path for a rounded rect, built with arcTo so it works even where
+  // ctx.roundRect isn't available. Caller does fill/stroke/clip.
+  function roundRectPath(c, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+  // Cover-fits img into the x,y,w,h box (like CSS background-size: cover).
+  // Caller clips first if it wants the overflow cut to a shape.
+  function drawCoverImage(c, img, x, y, w, h) {
+    var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    var scale = Math.max(w / iw, h / ih);
+    var dw = iw * scale, dh = ih * scale;
+    c.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  }
+  // Sharp cover image with a blurred vignette toward the edges: draw the
+  // crisp photo, then a blurred copy of the same photo masked (via a
+  // radial gradient + destination-in) so only its outer ring shows,
+  // fading the edges without softening the center.
+  // Shrinks img down to ~tinyW wide, halving on each step rather than in
+  // one big jump. A single huge downscale (e.g. 1080px -> 28px in one
+  // drawImage call) doesn't box-average — it aliases, which is what was
+  // showing up as blotchy patches instead of a smooth blur. Repeated ~2x
+  // reductions let the browser's scaler actually average neighboring
+  // pixels at each step, the standard "mipmap chain" trick for a clean
+  // downscale blur.
+  function smoothBlurCanvas(img, W, H, tinyW) {
+    var cur = document.createElement("canvas");
+    cur.width = W; cur.height = H;
+    drawCoverImage(cur.getContext("2d"), img, 0, 0, W, H);
+    var curW = W, curH = H;
+    var tinyH = Math.max(1, Math.round((tinyW * H) / W));
+
+    while (curW > tinyW * 2 && curH > tinyH * 2) {
+      var nw = Math.max(tinyW, Math.round(curW / 2));
+      var nh = Math.max(tinyH, Math.round(curH / 2));
+      var next = document.createElement("canvas");
+      next.width = nw; next.height = nh;
+      var nctx = next.getContext("2d");
+      nctx.imageSmoothingEnabled = true;
+      nctx.imageSmoothingQuality = "high";
+      nctx.drawImage(cur, 0, 0, nw, nh);
+      cur = next; curW = nw; curH = nh;
+    }
+
+    var tiny = document.createElement("canvas");
+    tiny.width = tinyW; tiny.height = tinyH;
+    var tctx = tiny.getContext("2d");
+    tctx.imageSmoothingEnabled = true;
+    tctx.imageSmoothingQuality = "high";
+    tctx.drawImage(cur, 0, 0, tinyW, tinyH);
+
+    var blownUp = document.createElement("canvas");
+    blownUp.width = W; blownUp.height = H;
+    var bctx = blownUp.getContext("2d");
+    bctx.imageSmoothingEnabled = true;
+    bctx.imageSmoothingQuality = "high";
+    bctx.drawImage(tiny, 0, 0, W, H);
+    return blownUp;
+  }
+
+  function drawBackgroundEdgeBlur(c, img, W, H) {
+    drawCoverImage(c, img, 0, 0, W, H);
+
+    var blurred = smoothBlurCanvas(img, W, H, 28);
+    var bc = blurred.getContext("2d");
+
+    // mask so only the outer ring of the soft copy shows
+    bc.globalCompositeOperation = "destination-in";
+    var grad = bc.createRadialGradient(
+      W / 2, H / 2, Math.min(W, H) * 0.22,
+      W / 2, H / 2, Math.max(W, H) * 0.55
+    );
+    grad.addColorStop(0, "rgba(0,0,0,0)");
+    grad.addColorStop(1, "rgba(0,0,0,1)");
+    bc.fillStyle = grad;
+    bc.fillRect(0, 0, W, H);
+
+    c.drawImage(blurred, 0, 0);
+  }
+
+  function drawPlaceholder(c, W, H) {
+    var g = c.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, "#0f2f2b");
+    g.addColorStop(1, "#0a1416");
+    c.fillStyle = g;
+    c.fillRect(0, 0, W, H);
+    c.save();
+    c.strokeStyle = "rgba(45,212,191,0.18)";
+    c.lineWidth = 2;
+    var step = 64;
+    for (var x = -H; x < W; x += step) {
+      c.beginPath();
+      c.moveTo(x, 0);
+      c.lineTo(x + H, H);
+      c.stroke();
+    }
+    c.restore();
+    c.fillStyle = "rgba(255,255,255,0.55)";
+    c.font = "500 28px " + CANVAS_FONT_STACK;
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText("사진을 업로드하세요", W / 2, H / 2);
+  }
+
+  // Word-wraps text to maxWidth using ctx.measureText, honoring explicit
+  // newlines, and falling back to character-level splitting for a single
+  // "word" (no spaces) that alone exceeds the width — handles long CJK
+  // runs, unbroken URLs, etc. ctx.font must already be set.
+  function wrapText(c, text, maxWidth) {
+    var paragraphs = String(text).split("\n");
+    var lines = [];
+    paragraphs.forEach(function (para) {
+      if (para === "") { lines.push(""); return; }
+      var words = para.split(" ");
+      var current = "";
+      words.forEach(function (word) {
+        var candidate = current ? current + " " + word : word;
+        if (c.measureText(candidate).width <= maxWidth) {
+          current = candidate;
+          return;
+        }
+        // candidate overflows
+        if (current !== "") { lines.push(current); current = ""; }
+        if (c.measureText(word).width <= maxWidth) {
+          current = word;
+        } else {
+          // char-level split of an overlong word
+          var chunk = "";
+          for (var i = 0; i < word.length; i++) {
+            var ch = word[i];
+            var test = chunk + ch;
+            if (c.measureText(test).width > maxWidth && chunk !== "") {
+              lines.push(chunk);
+              chunk = ch;
+            } else {
+              chunk = test;
+            }
+          }
+          current = chunk;
+        }
+      });
+      lines.push(current);
+    });
+    return lines;
+  }
+
+  function formatTime(totalSeconds) {
+    var s = Math.max(0, Math.round(totalSeconds));
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return m + ":" + (r < 10 ? "0" : "") + r;
+  }
+  // Parses "mm:ss" (or a bare number of seconds) into seconds, or null if
+  // it doesn't look like a duration.
+  function parseDuration(str) {
+    if (typeof str !== "string") return null;
+    var s = str.trim();
+    if (s === "") return null;
+    var m = s.match(/^(\d{1,3}):([0-5]?\d)$/);
+    if (m) return Number(m[1]) * 60 + Number(m[2]);
+    if (/^\d{1,5}$/.test(s)) return Number(s);
+    return null;
+  }
+  function truncateToWidth(c, text, maxWidth) {
+    if (c.measureText(text).width <= maxWidth) return text;
+    var t = text;
+    while (t.length > 1 && c.measureText(t + "…").width > maxWidth) {
+      t = t.slice(0, -1);
+    }
+    return t + "…";
+  }
+  // Decorative "now playing" bar for the music category — purely visual
+  // (this is a static exported image, not an audio player), but sells the
+  // "노래 카드" concept. Drawn last so it always sits on top of the photo.
+  function drawMusicBar(c, W, H) {
+    var title = (state.music.title || "").trim();
+    if (!title) return;
+    var margin = W * 0.06;
+    var barH = W * 0.16;
+    var minBarY = margin, maxBarY = Math.max(margin, H - margin - barH);
+    var barY = minBarY + (maxBarY - minBarY) * state.music.barPosition;
+    var barW = W - margin * 2;
+    var r = barH * 0.22;
+
+    c.save();
+    roundRectPath(c, margin, barY, barW, barH, r);
+    c.fillStyle = "rgba(10,12,15,0.62)";
+    c.fill();
+
+    // album-art square: the same uploaded photo, cropped to a square —
+    // falls back to a note glyph until a photo is uploaded
+    var pad = barH * 0.16;
+    var artSize = barH - pad * 2;
+    var artX = margin + pad, artY = barY + pad;
+    var artR = artSize * 0.22;
+    roundRectPath(c, artX, artY, artSize, artSize, artR);
+    if (state.image) {
+      c.save();
+      c.clip();
+      drawCoverImage(c, state.image, artX, artY, artSize, artSize);
+      c.restore();
+    } else {
+      c.fillStyle = "rgba(255,255,255,0.16)";
+      c.fill();
+      c.fillStyle = "rgba(255,255,255,0.9)";
+      c.font = (artSize * 0.55) + "px " + CANVAS_FONT_STACK;
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText("♪", artX + artSize / 2, artY + artSize / 2 + artSize * 0.03);
+    }
+
+    // title + progress line
+    var textX = margin + pad * 2 + artSize;
+    var textMaxWidth = barW - (textX - margin) - pad;
+    c.textAlign = "left";
+    c.fillStyle = "#ffffff";
+    c.font = "600 " + Math.round(barH * 0.22) + "px " + CANVAS_FONT_STACK;
+    var titleY = barY + barH * 0.34;
+    c.fillText(truncateToWidth(c, title, textMaxWidth), textX, titleY);
+
+    var lineY = barY + barH * 0.66;
+    var lineW = textMaxWidth;
+    c.strokeStyle = "rgba(255,255,255,0.28)";
+    c.lineWidth = Math.max(2, barH * 0.035);
+    c.lineCap = "round";
+    c.beginPath();
+    c.moveTo(textX, lineY);
+    c.lineTo(textX + lineW, lineY);
+    c.stroke();
+
+    var prog = Math.min(1, Math.max(0, state.music.progress));
+    c.strokeStyle = "#ffffff";
+    c.beginPath();
+    c.moveTo(textX, lineY);
+    c.lineTo(textX + lineW * prog, lineY);
+    c.stroke();
+    c.beginPath();
+    c.fillStyle = "#ffffff";
+    c.arc(textX + lineW * prog, lineY, barH * 0.055, 0, Math.PI * 2);
+    c.fill();
+
+    // elapsed / total time
+    c.fillStyle = "rgba(255,255,255,0.7)";
+    c.font = "500 " + Math.round(barH * 0.14) + "px " + CANVAS_FONT_STACK;
+    c.textBaseline = "top";
+    var duration = state.music.duration || 225;
+    c.fillText(formatTime(duration * prog) + " / " + formatTime(duration), textX, lineY + barH * 0.08);
+
+    c.restore();
+  }
+
+  // Draws a 5-star rating starting at (x, y) (y = glyph center), gold for
+  // the filled portion (supports half-stars) over a dim base row.
+  function drawStars(c, x, y, size, rating) {
+    var gap = size * 0.16;
+    c.save();
+    c.textAlign = "left";
+    c.textBaseline = "middle";
+    c.font = size + "px " + CANVAS_FONT_STACK;
+    for (var i = 0; i < 5; i++) {
+      var sx = x + i * (size + gap);
+      c.fillStyle = "rgba(255,255,255,0.28)";
+      c.fillText("★", sx, y);
+      var fillFrac = Math.min(1, Math.max(0, rating - i));
+      if (fillFrac > 0) {
+        c.save();
+        c.beginPath();
+        c.rect(sx, y - size, size * fillFrac, size * 2);
+        c.clip();
+        c.fillStyle = "#ffd166";
+        c.fillText("★", sx, y);
+        c.restore();
+      }
+    }
+    c.restore();
+  }
+
+  // "오늘의 맛집" bar — same layout family as the music player bar (photo
+  // thumbnail + name + a meter), with the meter as a star rating instead
+  // of a playback progress line.
+  function drawFoodBar(c, W, H) {
+    var place = (state.food.place || "").trim();
+    if (!place) return;
+    var margin = W * 0.06;
+    var barH = W * 0.16;
+    var minBarY = margin, maxBarY = Math.max(margin, H - margin - barH);
+    var barY = minBarY + (maxBarY - minBarY) * state.food.barPosition;
+    var barW = W - margin * 2;
+    var r = barH * 0.22;
+
+    c.save();
+    roundRectPath(c, margin, barY, barW, barH, r);
+    c.fillStyle = "rgba(10,12,15,0.62)";
+    c.fill();
+
+    var pad = barH * 0.16;
+    var artSize = barH - pad * 2;
+    var artX = margin + pad, artY = barY + pad;
+    var artR = artSize * 0.22;
+    roundRectPath(c, artX, artY, artSize, artSize, artR);
+    if (state.image) {
+      c.save();
+      c.clip();
+      drawCoverImage(c, state.image, artX, artY, artSize, artSize);
+      c.restore();
+    } else {
+      c.fillStyle = "rgba(255,255,255,0.16)";
+      c.fill();
+      c.fillStyle = "rgba(255,255,255,0.9)";
+      c.font = (artSize * 0.5) + "px " + CANVAS_FONT_STACK;
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText("🍴", artX + artSize / 2, artY + artSize / 2 + artSize * 0.03);
+    }
+
+    var textX = margin + pad * 2 + artSize;
+    var textMaxWidth = barW - (textX - margin) - pad;
+    c.textAlign = "left";
+    c.fillStyle = "#ffffff";
+    c.font = "600 " + Math.round(barH * 0.22) + "px " + CANVAS_FONT_STACK;
+    var nameY = barY + barH * 0.32;
+    c.fillText(truncateToWidth(c, place, textMaxWidth), textX, nameY);
+
+    var starY = barY + barH * 0.68;
+    var starSize = barH * 0.22;
+    drawStars(c, textX, starY, starSize, state.food.rating);
+
+    c.restore();
+  }
+
+  // Small pinned "📍 지역 · 가게 이름" pill near the top, Instagram
+  // location-tag style. Shows only once a place or region is entered.
+  function drawLocationLabel(c, W, H) {
+    var place = (state.food.place || "").trim();
+    var region = (state.food.region || "").trim();
+    if (!place && !region) return;
+    var label = "📍 " + (region && place ? region + " · " + place : (region || place));
+
+    var fontSize = Math.round(W * 0.032);
+    c.save();
+    c.font = "600 " + fontSize + "px " + CANVAS_FONT_STACK;
+    var textW = c.measureText(label).width;
+    var boxPadX = W * 0.028;
+    var boxH = fontSize + W * 0.028;
+    var boxW = Math.min(W * 0.9, textW + boxPadX * 2);
+    var boxX = (W - boxW) / 2;
+    var boxY = W * 0.05;
+
+    roundRectPath(c, boxX, boxY, boxW, boxH, boxH / 2);
+    c.fillStyle = "rgba(10,12,15,0.55)";
+    c.fill();
+    c.fillStyle = "#ffffff";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText(truncateToWidth(c, label, boxW - boxPadX * 2), W / 2, boxY + boxH / 2);
+    c.restore();
+  }
+
+  // Boarding-pass style ticket for the destination — a light paper strip
+  // (so it reads as a ticket sitting on the photo, unlike the dark app-UI
+  // bars used for music/food) split into a main stub and a smaller date
+  // stub by a dashed line with punched circular notches.
+  function drawTicket(c, W, H) {
+    var destination = (state.travel.destination || "").trim();
+    if (!destination) return;
+    var margin = W * 0.06;
+    var barH = W * 0.23;
+    var minBarY = margin, maxBarY = Math.max(margin, H - margin - barH);
+    var barY = minBarY + (maxBarY - minBarY) * state.travel.barPosition;
+    var barW = (W - margin * 2) * 0.74;
+    var barX = margin + ((W - margin * 2) - barW) / 2;
+    var r = barH * 0.16;
+    var stubW = Math.max(barW * 0.34, barH * 0.85);
+    var splitX = barX + barW - stubW;
+
+    c.save();
+    roundRectPath(c, barX, barY, barW, barH, r);
+    c.fillStyle = "#f6f1e6";
+    c.fill();
+
+    // punched notches at the dashed divider
+    var notchR = barH * 0.1;
+    c.save();
+    c.globalCompositeOperation = "destination-out";
+    c.beginPath(); c.arc(splitX, barY, notchR, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(splitX, barY + barH, notchR, 0, Math.PI * 2); c.fill();
+    c.restore();
+
+    c.strokeStyle = "rgba(30,26,20,0.3)";
+    c.lineWidth = Math.max(1.5, barH * 0.018);
+    c.setLineDash([barH * 0.07, barH * 0.06]);
+    c.beginPath();
+    c.moveTo(splitX, barY + notchR * 1.4);
+    c.lineTo(splitX, barY + barH - notchR * 1.4);
+    c.stroke();
+    c.setLineDash([]);
+
+    // main stub: plane icon + destination
+    var padL = barH * 0.18;
+    c.textBaseline = "alphabetic";
+    c.textAlign = "left";
+    c.font = Math.round(barH * 0.24) + "px " + CANVAS_FONT_STACK;
+    c.fillStyle = "#1c1f26";
+    c.fillText("✈", barX + padL, barY + barH * 0.42);
+
+    c.font = "700 " + Math.round(barH * 0.11) + "px " + CANVAS_FONT_STACK;
+    c.fillStyle = "rgba(28,31,38,0.55)";
+    c.fillText("TRAVEL TO", barX + padL, barY + barH * 0.62);
+
+    c.font = "700 " + Math.round(barH * 0.24) + "px " + CANVAS_FONT_STACK;
+    c.fillStyle = "#1c1f26";
+    var destMaxWidth = splitX - (barX + padL) - padL * 0.5;
+    c.fillText(truncateToWidth(c, destination.toUpperCase(), destMaxWidth), barX + padL, barY + barH * 0.86);
+
+    // date stub
+    var date = (state.travel.date || "").trim();
+    var stubCenterX = splitX + stubW / 2;
+    c.textAlign = "center";
+    c.font = Math.round(barH * 0.3) + "px " + CANVAS_FONT_STACK;
+    c.fillText("📅", stubCenterX, barY + barH * 0.44);
+    if (date) {
+      c.font = "700 " + Math.round(barH * 0.1) + "px " + CANVAS_FONT_STACK;
+      c.fillStyle = "#1c1f26";
+      c.fillText(truncateToWidth(c, date, stubW - barH * 0.12), stubCenterX, barY + barH * 0.8);
+    }
+
+    c.restore();
+  }
+
+  function render() {
+    var dims = ASPECTS[state.aspect];
+    if (canvas.width !== dims.w || canvas.height !== dims.h) {
+      canvas.width = dims.w;
+      canvas.height = dims.h;
+    }
+    var W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    if (state.image) {
+      if (state.category === "music") {
+        // music cards: same photo behind the card, edges blurred into a
+        // vignette so the sharp album-art square (drawn later) reads as
+        // the focal point.
+        drawBackgroundEdgeBlur(ctx, state.image, W, H);
+      } else {
+        drawCoverImage(ctx, state.image, 0, 0, W, H);
+      }
+    } else {
+      drawPlaceholder(ctx, W, H);
+    }
+
+    var t = state.text;
+    var content = (t.content || "");
+    if (content.trim() !== "") {
+      ctx.save();
+      ctx.font = "600 " + t.fontSize + "px " + CANVAS_FONT_STACK;
+      ctx.textBaseline = "middle";
+      ctx.textAlign = t.align;
+      var maxWidth = W * 0.86;
+      var lines = wrapText(ctx, content, maxWidth);
+      var lineHeight = t.fontSize * 1.28;
+      var totalHeight = lines.length * lineHeight;
+      var cx = t.x * W;
+      var cy = t.y * H;
+      var startY = cy - totalHeight / 2 + lineHeight / 2;
+      lines.forEach(function (line, i) {
+        var ly = startY + i * lineHeight;
+        if (t.outline) {
+          ctx.lineWidth = Math.max(2, t.fontSize * 0.09);
+          ctx.strokeStyle = "rgba(0,0,0,0.7)";
+          ctx.lineJoin = "round";
+          ctx.strokeText(line, cx, ly);
+        }
+        ctx.fillStyle = t.color;
+        ctx.fillText(line, cx, ly);
+      });
+      ctx.restore();
+    }
+
+    if (state.category === "music") {
+      drawMusicBar(ctx, W, H);
+    } else if (state.category === "food") {
+      drawLocationLabel(ctx, W, H);
+      drawFoodBar(ctx, W, H);
+    } else if (state.category === "travel") {
+      drawTicket(ctx, W, H);
+    }
+
+    resReadout.textContent = W + " × " + H + "px (" + state.aspect + ")";
+    fontReadout.textContent = t.fontSize + "px";
+  }
+
+  // ---------- image upload ----------
+  function rejectImage(msg) {
+    flash(imageErrorEl, msg, "error");
+  }
+  function acceptImageFile(file) {
+    if (!file) return;
+    var okTypes = ["image/png", "image/jpeg"];
+    if (okTypes.indexOf(file.type) === -1) {
+      rejectImage("지원하지 않는 파일 형식입니다 (" + (file.type || "알 수 없음") + "). PNG, JPEG만 가능하며, 기존 작업은 그대로 유지됩니다.");
+      return;
+    }
+    clearBanner(imageErrorEl);
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        state.image = img;
+        state.imageDataURL = reader.result;
+        fileNameEl.textContent = file.name;
+        render();
+      };
+      img.onerror = function () {
+        rejectImage("이미지를 불러오지 못했습니다 (파일이 손상되었을 수 있습니다). 기존 작업은 그대로 유지됩니다.");
+      };
+      img.src = reader.result;
+    };
+    reader.onerror = function () {
+      rejectImage("파일을 읽는 중 오류가 발생했습니다. 기존 작업은 그대로 유지됩니다.");
+    };
+    reader.readAsDataURL(file);
+  }
+  fileInput.addEventListener("change", function (e) {
+    acceptImageFile(e.target.files[0]);
+    fileInput.value = "";
+  });
+  dropzone.addEventListener("click", function () { fileInput.click(); });
+  dropzone.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+  });
+  ["dragenter", "dragover"].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) {
+      e.preventDefault(); dropzone.classList.add("drag");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) {
+      e.preventDefault(); dropzone.classList.remove("drag");
+    });
+  });
+  dropzone.addEventListener("drop", function (e) {
+    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    acceptImageFile(file);
+  });
+
+  // ---------- aspect ratio ----------
+  function setAspect(ratio) {
+    state.aspect = ratio;
+    Array.prototype.forEach.call(ratioGroup.children, function (btn) {
+      btn.classList.toggle("active", btn.dataset.ratio === ratio);
+    });
+    render();
+  }
+  ratioGroup.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-ratio]");
+    if (btn) setAspect(btn.dataset.ratio);
+  });
+
+  // ---------- category (music / food / travel) ----------
+  function renderChips() {
+    var chips = CATEGORY_CHIPS[state.category] || [];
+    chipRowEl.innerHTML = "";
+    chips.forEach(function (label) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.textContent = label;
+      chip.addEventListener("click", function () {
+        state.text.content = label;
+        textContentEl.value = label;
+        render();
+      });
+      chipRowEl.appendChild(chip);
+    });
+  }
+  function setCategory(cat) {
+    state.category = cat;
+    Array.prototype.forEach.call(categoryGroup.children, function (btn) {
+      btn.classList.toggle("active", btn.dataset.category === cat);
+    });
+    renderChips();
+    var isMusic = cat === "music";
+    var isFood = cat === "food";
+    var isTravel = cat === "travel";
+    musicTitleField.style.display = isMusic ? "" : "none";
+    musicDurationField.style.display = isMusic ? "" : "none";
+    musicProgressField.style.display = isMusic ? "" : "none";
+    musicBarPosField.style.display = isMusic ? "" : "none";
+    foodPlaceField.style.display = isFood ? "" : "none";
+    foodRegionField.style.display = isFood ? "" : "none";
+    foodRatingField.style.display = isFood ? "" : "none";
+    foodBarPosField.style.display = isFood ? "" : "none";
+    travelDestField.style.display = isTravel ? "" : "none";
+    travelDateField.style.display = isTravel ? "" : "none";
+    travelBarPosField.style.display = isTravel ? "" : "none";
+    textContentLabelEl.textContent = isMusic ? "하고 싶은 말" : "내용";
+    musicTitleEl.value = state.music.title;
+    musicDurationEl.value = formatTime(state.music.duration);
+    musicProgressEl.value = Math.round(state.music.progress * 100);
+    musicProgressValEl.textContent = Math.round(state.music.progress * 100) + "%";
+    musicBarPosEl.value = Math.round(state.music.barPosition * 100);
+    musicBarPosValEl.textContent = Math.round(state.music.barPosition * 100) + "%";
+    foodPlaceEl.value = state.food.place;
+    foodRegionEl.value = state.food.region;
+    foodRatingEl.value = state.food.rating;
+    foodRatingValEl.textContent = state.food.rating.toFixed(1) + " / 5";
+    foodBarPosEl.value = Math.round(state.food.barPosition * 100);
+    foodBarPosValEl.textContent = Math.round(state.food.barPosition * 100) + "%";
+    travelDestEl.value = state.travel.destination;
+    travelDateEl.value = state.travel.date;
+    travelBarPosEl.value = Math.round(state.travel.barPosition * 100);
+    travelBarPosValEl.textContent = Math.round(state.travel.barPosition * 100) + "%";
+    render();
+  }
+  categoryGroup.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-category]");
+    if (btn) setCategory(btn.dataset.category);
+  });
+  musicTitleEl.addEventListener("input", function () {
+    state.music.title = musicTitleEl.value;
+    render();
+  });
+  musicDurationEl.addEventListener("input", function () {
+    var seconds = parseDuration(musicDurationEl.value);
+    if (seconds !== null && seconds > 0) {
+      state.music.duration = seconds;
+      render();
+    }
+  });
+  musicDurationEl.addEventListener("blur", function () {
+    // normalize display (e.g. "225" -> "3:45") once the user is done typing
+    musicDurationEl.value = formatTime(state.music.duration);
+  });
+  musicProgressEl.addEventListener("input", function () {
+    state.music.progress = Number(musicProgressEl.value) / 100;
+    musicProgressValEl.textContent = musicProgressEl.value + "%";
+    render();
+  });
+  musicBarPosEl.addEventListener("input", function () {
+    state.music.barPosition = Number(musicBarPosEl.value) / 100;
+    musicBarPosValEl.textContent = musicBarPosEl.value + "%";
+    render();
+  });
+  foodPlaceEl.addEventListener("input", function () {
+    state.food.place = foodPlaceEl.value;
+    render();
+  });
+  foodRegionEl.addEventListener("input", function () {
+    state.food.region = foodRegionEl.value;
+    render();
+  });
+  foodRatingEl.addEventListener("input", function () {
+    state.food.rating = Number(foodRatingEl.value);
+    foodRatingValEl.textContent = state.food.rating.toFixed(1) + " / 5";
+    render();
+  });
+  foodBarPosEl.addEventListener("input", function () {
+    state.food.barPosition = Number(foodBarPosEl.value) / 100;
+    foodBarPosValEl.textContent = foodBarPosEl.value + "%";
+    render();
+  });
+  travelDestEl.addEventListener("input", function () {
+    state.travel.destination = travelDestEl.value;
+    render();
+  });
+  travelDateEl.addEventListener("input", function () {
+    state.travel.date = travelDateEl.value;
+    render();
+  });
+  travelBarPosEl.addEventListener("input", function () {
+    state.travel.barPosition = Number(travelBarPosEl.value) / 100;
+    travelBarPosValEl.textContent = travelBarPosEl.value + "%";
+    render();
+  });
+
+  // ---------- text controls ----------
+  function syncTextControlsFromState() {
+    textContentEl.value = state.text.content;
+    fontSizeEl.value = state.text.fontSize;
+    fontSizeValEl.textContent = state.text.fontSize + "px";
+    posXEl.value = Math.round(state.text.x * 100);
+    posYEl.value = Math.round(state.text.y * 100);
+    posXValEl.textContent = Math.round(state.text.x * 100) + "%";
+    posYValEl.textContent = Math.round(state.text.y * 100) + "%";
+    textColorEl.value = state.text.color;
+    outlineToggleEl.checked = !!state.text.outline;
+    Array.prototype.forEach.call(alignGroup.children, function (btn) {
+      btn.classList.toggle("active", btn.dataset.align === state.text.align);
+    });
+  }
+  textContentEl.addEventListener("input", function () {
+    state.text.content = textContentEl.value;
+    render();
+  });
+  fontSizeEl.addEventListener("input", function () {
+    state.text.fontSize = Number(fontSizeEl.value);
+    fontSizeValEl.textContent = state.text.fontSize + "px";
+    render();
+  });
+  posXEl.addEventListener("input", function () {
+    state.text.x = Number(posXEl.value) / 100;
+    posXValEl.textContent = posXEl.value + "%";
+    render();
+  });
+  posYEl.addEventListener("input", function () {
+    state.text.y = Number(posYEl.value) / 100;
+    posYValEl.textContent = posYEl.value + "%";
+    render();
+  });
+  textColorEl.addEventListener("input", function () {
+    state.text.color = textColorEl.value;
+    render();
+  });
+  outlineToggleEl.addEventListener("change", function () {
+    state.text.outline = outlineToggleEl.checked;
+    render();
+  });
+  alignGroup.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-align]");
+    if (!btn) return;
+    state.text.align = btn.dataset.align;
+    Array.prototype.forEach.call(alignGroup.children, function (b) {
+      b.classList.toggle("active", b === btn);
+    });
+    render();
+  });
+
+  // drag-to-position directly on the canvas (fraction-based, so it stays
+  // correct across aspect-ratio and CSS display-size changes)
+  (function setupDrag() {
+    var dragging = false;
+    function posFromEvent(e) {
+      var rect = canvas.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width;
+      var y = (e.clientY - rect.top) / rect.height;
+      return {
+        x: Math.min(1, Math.max(0, x)),
+        y: Math.min(1, Math.max(0, y))
+      };
+    }
+    canvas.addEventListener("pointerdown", function (e) {
+      dragging = true;
+      canvas.setPointerCapture(e.pointerId);
+      var p = posFromEvent(e);
+      state.text.x = p.x; state.text.y = p.y;
+      posXEl.value = Math.round(p.x * 100); posXValEl.textContent = posXEl.value + "%";
+      posYEl.value = Math.round(p.y * 100); posYValEl.textContent = posYEl.value + "%";
+      render();
+    });
+    canvas.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      var p = posFromEvent(e);
+      state.text.x = p.x; state.text.y = p.y;
+      posXEl.value = Math.round(p.x * 100); posXValEl.textContent = posXEl.value + "%";
+      posYEl.value = Math.round(p.y * 100); posYValEl.textContent = posYEl.value + "%";
+      render();
+    });
+    canvas.addEventListener("pointerup", function () { dragging = false; });
+    canvas.addEventListener("pointercancel", function () { dragging = false; });
+  })();
+
+  // ---------- templates (localStorage CRUD, unique-id based) ----------
+  function loadTemplates() {
+    try {
+      var raw = localStorage.getItem(TPL_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function persistTemplates(arr) {
+    try {
+      localStorage.setItem(TPL_KEY, JSON.stringify(arr));
+      return true;
+    } catch (e) {
+      flash(tplBanner, "저장 공간이 부족하거나 브라우저 저장소를 사용할 수 없습니다.", "error", 4000);
+      return false;
+    }
+  }
+  function makeId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "tpl-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  }
+  function snapshotCurrent(name, id) {
+    return {
+      id: id || makeId(),
+      name: name,
+      aspect: state.aspect,
+      category: state.category,
+      text: {
+        content: state.text.content,
+        x: state.text.x,
+        y: state.text.y,
+        fontSize: state.text.fontSize,
+        color: state.text.color,
+        align: state.text.align,
+        outline: state.text.outline
+      },
+      music: {
+        title: state.music.title,
+        progress: state.music.progress,
+        duration: state.music.duration,
+        barPosition: state.music.barPosition
+      },
+      food: {
+        place: state.food.place,
+        region: state.food.region,
+        rating: state.food.rating,
+        barPosition: state.food.barPosition
+      },
+      travel: {
+        destination: state.travel.destination,
+        date: state.travel.date,
+        barPosition: state.travel.barPosition
+      },
+      imageDataURL: state.imageDataURL || null,
+      updatedAt: new Date().toISOString()
+    };
+  }
+  function renderTplList() {
+    var templates = loadTemplates();
+    tplListEl.innerHTML = "";
+    if (templates.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "tpl-empty";
+      empty.textContent = "저장된 템플릿이 없습니다.";
+      tplListEl.appendChild(empty);
+      return;
+    }
+    templates.forEach(function (tpl) {
+      var row = document.createElement("div");
+      row.className = "tpl-row";
+      row.dataset.id = tpl.id;
+
+      var meta = document.createElement("div");
+      meta.className = "meta";
+      var name = document.createElement("div");
+      name.className = "name";
+      name.textContent = tpl.name || "(이름 없음)";
+      name.title = tpl.name || "";
+      var badgeWrap = document.createElement("div");
+      badgeWrap.style.display = "flex";
+      badgeWrap.style.gap = "4px";
+      var badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = tpl.aspect;
+      badgeWrap.appendChild(badge);
+      if (tpl.category && CATEGORY_LABELS[tpl.category]) {
+        var catBadge = document.createElement("span");
+        catBadge.className = "badge";
+        catBadge.textContent = CATEGORY_LABELS[tpl.category];
+        badgeWrap.appendChild(catBadge);
+      }
+      meta.appendChild(name);
+      meta.appendChild(badgeWrap);
+
+      var sub = document.createElement("div");
+      sub.className = "sub";
+      sub.textContent = "id: " + tpl.id.slice(0, 8) + "…";
+
+      var actions = document.createElement("div");
+      actions.className = "actions";
+      var loadBtn = document.createElement("button");
+      loadBtn.className = "btn small grow";
+      loadBtn.textContent = "불러오기";
+      loadBtn.addEventListener("click", function () { loadTemplateIntoEditor(tpl); });
+
+      var delBtn = document.createElement("button");
+      delBtn.className = "btn small danger grow";
+      delBtn.textContent = "삭제";
+      var confirming = false;
+      delBtn.addEventListener("click", function () {
+        if (!confirming) {
+          confirming = true;
+          delBtn.textContent = "정말 삭제?";
+          window.setTimeout(function () {
+            if (confirming) { confirming = false; delBtn.textContent = "삭제"; }
+          }, 3000);
+          return;
+        }
+        deleteTemplate(tpl.id);
+      });
+
+      actions.appendChild(loadBtn);
+      actions.appendChild(delBtn);
+
+      row.appendChild(meta);
+      row.appendChild(sub);
+      row.appendChild(actions);
+      tplListEl.appendChild(row);
+    });
+  }
+  function loadTemplateIntoEditor(tpl) {
+    state.aspect = tpl.aspect in ASPECTS ? tpl.aspect : "1:1";
+    state.text = {
+      content: tpl.text && typeof tpl.text.content === "string" ? tpl.text.content : "",
+      x: tpl.text && typeof tpl.text.x === "number" ? tpl.text.x : 0.5,
+      y: tpl.text && typeof tpl.text.y === "number" ? tpl.text.y : 0.84,
+      fontSize: tpl.text && typeof tpl.text.fontSize === "number" ? tpl.text.fontSize : 64,
+      color: tpl.text && tpl.text.color ? tpl.text.color : "#ffffff",
+      align: tpl.text && tpl.text.align ? tpl.text.align : "center",
+      outline: tpl.text ? !!tpl.text.outline : true
+    };
+    state.music = {
+      title: tpl.music && typeof tpl.music.title === "string" ? tpl.music.title : "",
+      progress: tpl.music && typeof tpl.music.progress === "number" ? tpl.music.progress : 0.35,
+      duration: tpl.music && typeof tpl.music.duration === "number" ? tpl.music.duration : 225,
+      barPosition: tpl.music && typeof tpl.music.barPosition === "number" ? tpl.music.barPosition : 1
+    };
+    state.food = {
+      place: tpl.food && typeof tpl.food.place === "string" ? tpl.food.place : "",
+      region: tpl.food && typeof tpl.food.region === "string" ? tpl.food.region : "",
+      rating: tpl.food && typeof tpl.food.rating === "number" ? tpl.food.rating : 4,
+      barPosition: tpl.food && typeof tpl.food.barPosition === "number" ? tpl.food.barPosition : 1
+    };
+    state.travel = {
+      destination: tpl.travel && typeof tpl.travel.destination === "string" ? tpl.travel.destination : "",
+      date: tpl.travel && typeof tpl.travel.date === "string" ? tpl.travel.date : "",
+      barPosition: tpl.travel && typeof tpl.travel.barPosition === "number" ? tpl.travel.barPosition : 1
+    };
+    state.currentTemplateId = tpl.id;
+    tplNameEl.value = tpl.name || "";
+    updateTplBtn.disabled = false;
+
+    Array.prototype.forEach.call(ratioGroup.children, function (btn) {
+      btn.classList.toggle("active", btn.dataset.ratio === state.aspect);
+    });
+    setCategory(tpl.category in CATEGORY_LABELS ? tpl.category : "travel");
+    syncTextControlsFromState();
+
+    if (tpl.imageDataURL) {
+      var img = new Image();
+      img.onload = function () {
+        state.image = img;
+        state.imageDataURL = tpl.imageDataURL;
+        render();
+      };
+      img.onerror = function () {
+        state.image = null;
+        state.imageDataURL = null;
+        render();
+        flash(tplBanner, "템플릿의 이미지 데이터를 불러오지 못했습니다. 문구/설정만 복원했습니다.", "warn", 4000);
+      };
+      img.src = tpl.imageDataURL;
+    } else {
+      state.image = null;
+      state.imageDataURL = null;
+      render();
+    }
+    flash(tplBanner, "“" + (tpl.name || "") + "” 템플릿을 불러왔습니다.", "ok", 2500);
+  }
+  function deleteTemplate(id) {
+    var templates = loadTemplates().filter(function (t) { return t.id !== id; });
+    if (persistTemplates(templates)) {
+      if (state.currentTemplateId === id) {
+        state.currentTemplateId = null;
+        updateTplBtn.disabled = true;
+      }
+      renderTplList();
+      flash(tplBanner, "템플릿을 삭제했습니다.", "ok", 2500);
+    }
+  }
+  saveNewTplBtn.addEventListener("click", function () {
+    var name = tplNameEl.value.trim();
+    if (!name) { flash(tplBanner, "템플릿 이름을 입력해 주세요.", "error", 3000); return; }
+    var templates = loadTemplates();
+    var tpl = snapshotCurrent(name);
+    templates.push(tpl);
+    if (persistTemplates(templates)) {
+      state.currentTemplateId = tpl.id;
+      updateTplBtn.disabled = false;
+      renderTplList();
+      flash(tplBanner, "새 템플릿으로 저장했습니다 (" + templates.length + "개).", "ok", 2500);
+    }
+  });
+  updateTplBtn.addEventListener("click", function () {
+    if (!state.currentTemplateId) return;
+    var templates = loadTemplates();
+    var idx = templates.findIndex(function (t) { return t.id === state.currentTemplateId; });
+    if (idx === -1) {
+      flash(tplBanner, "원본 템플릿을 찾을 수 없습니다 (다른 곳에서 삭제되었을 수 있어요).", "error", 3500);
+      return;
+    }
+    var name = tplNameEl.value.trim() || templates[idx].name;
+    templates[idx] = snapshotCurrent(name, state.currentTemplateId);
+    if (persistTemplates(templates)) {
+      renderTplList();
+      flash(tplBanner, "템플릿을 업데이트했습니다.", "ok", 2500);
+    }
+  });
+
+  // ---------- JSON import / export ----------
+  function validateImportedPayload(obj) {
+    if (!obj || typeof obj !== "object" || !Array.isArray(obj.templates)) {
+      return "최상위 형식이 올바르지 않습니다 (templates 배열이 필요합니다).";
+    }
+    for (var i = 0; i < obj.templates.length; i++) {
+      var t = obj.templates[i];
+      if (!t || typeof t !== "object") return (i + 1) + "번째 항목이 객체가 아닙니다.";
+      if (typeof t.id !== "string" || !t.id) return (i + 1) + "번째 항목에 id가 없습니다.";
+      if (typeof t.name !== "string" || !t.name) return (i + 1) + "번째 항목(" + t.id + ")에 name이 없습니다.";
+      if (!(t.aspect in ASPECTS)) return (i + 1) + "번째 항목(" + t.id + ")의 aspect 값이 올바르지 않습니다.";
+      if (!t.text || typeof t.text.content !== "string") return (i + 1) + "번째 항목(" + t.id + ")에 text.content가 없습니다.";
+    }
+    return null;
+  }
+  // Saves `blob` as `filename`. Tries the Claude Artifact "downloads"
+  // capability first (the nice confirmation UI inside the Claude viewer),
+  // then always falls back to a plain browser download. The fallback is
+  // what actually runs once this file is deployed on its own (GitHub
+  // Pages, etc.) — there `window.claude` doesn't exist at all, so the
+  // capability path must never be the only way to save a file.
+  async function saveFile(filename, blob) {
+    var dl = null;
+    try {
+      if (window.claude && typeof window.claude.use === "function") {
+        dl = await window.claude.use("downloads");
+      }
+    } catch (e) { dl = null; }
+
+    if (dl) {
+      try {
+        var res = await dl.save({ filename: filename, data: blob });
+        return { ok: true, status: res.status };
+      } catch (err) {
+        if (err && err.code === "declined") return { ok: false, declined: true };
+        // any other capability error: fall through to the native path below
+      }
+    }
+
+    try {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      return { ok: true, status: "saved" };
+    } catch (e2) {
+      return { ok: false, error: e2 };
+    }
+  }
+
+  exportJsonBtn.addEventListener("click", async function () {
+    var payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      templates: loadTemplates()
+    };
+    var json = JSON.stringify(payload, null, 2);
+    var blob = new Blob([json], { type: "application/json" });
+    var result = await saveFile("snapcard-templates.json", blob);
+    if (result.ok) {
+      flash(jsonBanner, "템플릿을 JSON으로 내보냈습니다.", "ok", 3000);
+    } else if (result.declined) {
+      flash(jsonBanner, "내보내기가 취소되었습니다.", "warn", 3000);
+    } else {
+      flash(jsonBanner, "내보내기에 실패했습니다: " + (result.error && result.error.message || "알 수 없는 오류"), "error", 4000);
+    }
+  });
+  importJsonBtn.addEventListener("click", function () { jsonFileInput.click(); });
+  jsonFileInput.addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    jsonFileInput.value = "";
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var obj;
+      try {
+        obj = JSON.parse(reader.result);
+      } catch (err) {
+        flash(jsonBanner, "JSON 구문 오류로 가져오기를 거부했습니다. 기존 템플릿은 그대로 유지됩니다.", "error", 5000);
+        return;
+      }
+      var problem = validateImportedPayload(obj);
+      if (problem) {
+        flash(jsonBanner, "필수 항목 누락/형식 오류로 가져오기를 거부했습니다: " + problem + " 기존 템플릿은 그대로 유지됩니다.", "error", 6000);
+        return;
+      }
+      // valid: upsert by id (merge), never a destructive blind overwrite
+      var existing = loadTemplates();
+      var byId = {};
+      existing.forEach(function (t) { byId[t.id] = t; });
+      obj.templates.forEach(function (t) { byId[t.id] = t; });
+      var merged = Object.keys(byId).map(function (k) { return byId[k]; });
+      if (persistTemplates(merged)) {
+        renderTplList();
+        flash(jsonBanner, obj.templates.length + "개 템플릿을 가져와 병합했습니다.", "ok", 3500);
+      }
+    };
+    reader.onerror = function () {
+      flash(jsonBanner, "파일을 읽지 못했습니다. 기존 템플릿은 그대로 유지됩니다.", "error", 4000);
+    };
+    reader.readAsText(file);
+  });
+
+  // ---------- download ----------
+  downloadBtn.addEventListener("click", function () {
+    var format = fmtSelect.value;
+    render();
+
+    // Source for the export. For JPEG (no alpha channel) we composite the
+    // canvas over an explicit white background first — otherwise any
+    // transparent pixels serialize as black, not the white the UI warns
+    // about, and the exported file would silently stop matching what
+    // that warning promises.
+    var exportCanvas = canvas;
+    if (format === "jpeg") {
+      exportCanvas = document.createElement("canvas");
+      exportCanvas.width = canvas.width;
+      exportCanvas.height = canvas.height;
+      var ectx = exportCanvas.getContext("2d");
+      ectx.fillStyle = "#ffffff";
+      ectx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      ectx.drawImage(canvas, 0, 0);
+    }
+
+    exportCanvas.toBlob(async function (blob) {
+      if (!blob) {
+        downloadBanner.style.display = "block";
+        flash(downloadBanner, "이미지 생성에 실패했습니다.", "error");
+        return;
+      }
+      var ext = format === "jpeg" ? "jpg" : "png";
+      var filename = "snapcard-" + state.aspect.replace(":", "x") + "-" + Date.now() + "." + ext;
+      var result = await saveFile(filename, blob);
+      downloadBanner.style.display = "block";
+      if (result.ok) {
+        flash(downloadBanner, "다운로드되었습니다: " + filename, "ok", 3000);
+      } else if (result.declined) {
+        flash(downloadBanner, "다운로드가 취소되었습니다.", "warn", 2500);
+      } else {
+        flash(downloadBanner, "다운로드 중 오류: " + (result.error && result.error.message || "알 수 없는 오류"), "error", 4000);
+      }
+    }, format === "jpeg" ? "image/jpeg" : "image/png", 0.92);
+  });
+  fmtSelect.addEventListener("change", function () {
+    // JPEG has no alpha channel — warn once so transparent-image exports
+    // aren't a silent surprise (relevant to the transparency test case).
+    if (fmtSelect.value === "jpeg" && state.image) {
+      downloadBanner.style.display = "block";
+      flash(downloadBanner, "JPEG는 투명 배경을 지원하지 않습니다 (흰 배경으로 채워집니다).", "warn", 4000);
+    }
+  });
+
+  // ---------- seed templates (first run only) ----------
+  // Gives the template list a realistic starting state instead of an empty
+  // shell — one example per category.
+  function seedTemplatesIfEmpty() {
+    if (loadTemplates().length > 0) return;
+    var seeds = [
+      { name: "이번 주 플레이리스트", category: "music", aspect: "1:1",
+        text: { content: "요즘 계속 듣는 노래", x: 0.5, y: 0.58, fontSize: 56, color: "#ffffff", align: "center", outline: true },
+        music: { title: "좋아하는 노래 제목 - 아티스트", progress: 0.35, duration: 225, barPosition: 1 } },
+      { name: "오늘의 맛집", category: "food", aspect: "4:5",
+        text: { content: "인생 메뉴 발견", x: 0.5, y: 0.5, fontSize: 60, color: "#ffffff", align: "center", outline: true },
+        music: null,
+        food: { place: "가게 이름을 입력하세요", region: "지역", rating: 4.5, barPosition: 1 } },
+      { name: "여행 스냅", category: "travel", aspect: "9:16",
+        text: { content: "다시 가고 싶다", x: 0.5, y: 0.46, fontSize: 60, color: "#ffffff", align: "center", outline: true },
+        music: null, food: null,
+        travel: { destination: "여행지를 입력하세요", date: "2024.08.15", barPosition: 1 } }
+    ];
+    var templates = seeds.map(function (s) {
+      return {
+        id: makeId(), name: s.name, aspect: s.aspect, category: s.category,
+        text: s.text, music: s.music || null, food: s.food || null, travel: s.travel || null,
+        imageDataURL: null, updatedAt: new Date().toISOString()
+      };
+    });
+    persistTemplates(templates);
+  }
+
+  // ---------- boot ----------
+  function boot() {
+    seedTemplatesIfEmpty();
+    setAspect(state.aspect);
+    setCategory(state.category);
+    syncTextControlsFromState();
+    renderTplList();
+    render();
+    // Re-render once the webfont has actually loaded so the very first
+    // paint doesn't get replaced by a metrics-shifted fallback swap.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(render).catch(function () {});
+    }
+  }
+  boot();
+})();
+</script>
